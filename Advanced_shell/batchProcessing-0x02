@@ -1,25 +1,46 @@
 #!/bin/bash
 # Script: batchProcessing-0x02
-# Objective: Fetch data for multiple Pokémon and save to separate files
+# Objective: Fetch multiple Pokémon with retry logic
 
 POKEMONS=("bulbasaur" "ivysaur" "venusaur" "charmander" "charmeleon")
 BASE_URL="https://pokeapi.co/api/v2/pokemon"
 OUTPUT_DIR="pokemon_data"
+ERROR_FILE="errors.txt"
 
 # Ensure output directory exists
 mkdir -p "$OUTPUT_DIR"
+# Clear previous error log
+> "$ERROR_FILE"
 
-# Loop through each Pokémon
+# Function to fetch data with retry
+fetch_pokemon() {
+	local pokemon=$1
+	local attempt=1
+	local success=0
+
+	while [ $attempt -le 3 ]; do
+		echo "Fetching data for $pokemon (attempt $attempt)..."
+		curl -s -o "$OUTPUT_DIR/$pokemon.json" "$BASE_URL/$pokemon"
+		if [ $? -eq 0 ] && [ -s "$OUTPUT_DIR/$pokemon.json" ]; then
+			echo "Saved data to $OUTPUT_DIR/$pokemon.json ✅"
+			success=1
+			break
+		else
+			echo "Attempt $attempt failed for $pokemon ❌"
+			((attempt++))
+			
+			sleep 2
+		fi
+			done
+		if [ $success -eq 0 ]; then
+			echo "Failed to fetch $pokemon after 3 attempts. Logged error." | tee -a "$ERROR_FILE"
+		fi
+}	
+
+
+# Loop through Pokémon list
 for pokemon in "${POKEMONS[@]}"; do
-	echo "Fetching data for $pokemon..."
-	curl -s -o "$OUTPUT_DIR/$pokemon.json" "$BASE_URL/$pokemon"
-	
-	if [ $? -eq 0 ] && [ -s "$OUTPUT_DIR/$pokemon.json" ]; then
-		echo "Saved data to $OUTPUT_DIR/$pokemon.json ✅"
-	else
-		echo "Failed to fetch $pokemon ❌"
-	fi
-	# Add delay to avoid rate limiting
+	fetch_pokemon "$pokemon"
 	sleep 2
 	done
 
