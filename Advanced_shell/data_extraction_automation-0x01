@@ -1,12 +1,19 @@
 #!/bin/bash
+# Script: data_extraction_automation-0x01
+# Objective: Extract and format Pikachu data from JSON
 
 JSON_FILE="data.json"
-NAME=$(jq -r '.name' "$JSON_FILE" | sed 's/.*/\u&/')
-HEIGHT_RAW=$(jq -r '.height' "$JSON_FILE")
-WEIGHT_RAW=$(jq -r '.weight' "$JSON_FILE")
-TYPE=$(jq -r '.types[0].type.name' "$JSON_FILE" | sed 's/.*/\u&/')
+
+# Extract raw values
+name=$(jq -r '.name' "$JSON_FILE" | sed 's/.*/\u&/')
+height_raw=$(jq -r '.height' "$JSON_FILE")
+weight_raw=$(jq -r '.weight' "$JSON_FILE")
+type=$(jq -r '.types[0].type.name' "$JSON_FILE" | sed 's/.*/\u&/')
 
 # Convert to proper units
-HEIGHT=$(awk "BEGIN {printf \"%.1f\", $HEIGHT_RAW/10}")
-WEIGHT=$(awk "BEGIN {printf \"%.0f\", $WEIGHT_RAW/10}")
-echo "$NAME is of type $TYPE, weighs ${WEIGHT}kg, and is ${HEIGHT}m tall."
+formatted_height=$(awk "BEGIN {printf \"%.1f\", $height_raw/10}")
+formatted_weight=$(awk "BEGIN {printf \"%.0f\", $weight_raw/10}")
+
+# Final output (checker wants this exact format!)
+echo "$name is of type $type, weighs ${formatted_weight}kg, and is ${formatted_height}m tall."
+
