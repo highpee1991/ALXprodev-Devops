@@ -1,0 +1,29 @@
+#!/bin/bash
+# Parallel data fetching for Pokémon
+
+POKEMONS=("bulbasaur" "ivysaur" "venusaur" "charmander" "charmeleon")
+API_URL="https://pokeapi.co/api/v2/pokemon"
+
+OUTPUT_DIR="pokemon_data_parallel"
+mkdir -p "$OUTPUT_DIR"
+
+echo "Fetching Pokémon data in parallel..."
+
+for pokemon in "${POKEMONS[@]}"; do
+    (
+        response=$(curl -s -w "%{http_code}" -o "$OUTPUT_DIR/$pokemon.json" "$API_URL/$pokemon")
+        status=${response: -3}
+
+        if [[ $status -ne 200 ]]; then
+            echo "❌ Failed to fetch $pokemon (HTTP $status)"
+            rm -f "$OUTPUT_DIR/$pokemon.json"
+        else
+            echo "✅ Successfully fetched $pokemon"
+        fi
+    ) &
+done
+
+# Wait for all background processes to finish
+wait
+echo "🎉 All Pokémon data fetched in parallel!"
+
